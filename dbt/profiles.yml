@@ -1,0 +1,34 @@
+content_intelligence:
+  target: dev
+  outputs:
+    dev:
+      type: postgres
+      host: "{{ env_var('POSTGRES_HOST', 'postgres') }}"
+      user: "{{ env_var('POSTGRES_USER', 'content_user') }}"
+      password: "{{ env_var('POSTGRES_PASSWORD', 'content_pass123') }}"
+      port: "{{ env_var('POSTGRES_PORT', '5432') | as_number }}"
+      dbname: "{{ env_var('POSTGRES_DB', 'content_intelligence') }}"
+      schema: "{{ env_var('DBT_SCHEMA', 'dbt_content_intel') }}"
+      threads: 4
+      keepalives_idle: 0
+      search_path: "{{ env_var('DBT_SCHEMA', 'dbt_content_intel') }}"
+      role: "{{ env_var('POSTGRES_USER', 'content_user') }}"
+      
+    prod:
+      type: postgres
+      host: "{{ env_var('POSTGRES_HOST_PROD') }}"
+      user: "{{ env_var('POSTGRES_USER_PROD') }}"
+      password: "{{ env_var('POSTGRES_PASSWORD_PROD') }}"
+      port: "{{ env_var('POSTGRES_PORT_PROD', '5432') | as_number }}"
+      dbname: "{{ env_var('POSTGRES_DB_PROD') }}"
+      schema: "{{ env_var('DBT_SCHEMA_PROD', 'dbt_content_intel') }}"
+      threads: 8
+      keepalives_idle: 0
+      search_path: "{{ env_var('DBT_SCHEMA_PROD', 'dbt_content_intel') }}"
+      role: "{{ env_var('POSTGRES_USER_PROD') }}"
+      
+    duckdb:
+      type: duckdb
+      path: "{{ env_var('DUCKDB_PATH', '/dbt/data/duckdb.duckdb') }}"
+      schema: "{{ env_var('DBT_SCHEMA', 'dbt_content_intel') }}"
+      threads: 4 

@@ -1,0 +1,56 @@
+FROM python:3.11-slim
+
+WORKDIR /dbt
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements and install Python dependencies
+COPY requirements-dbt.txt .
+RUN pip install --no-cache-dir -r requirements-dbt.txt
+
+# Install dbt-postgres
+RUN pip install --no-cache-dir dbt-postgres
+
+# Install Great Expectations
+RUN pip install --no-cache-dir great-expectations
+
+# Install ML libraries
+RUN pip install --no-cache-dir \
+    lightgbm \
+    xgboost \
+    scikit-learn \
+    shap \
+    pandas \
+    numpy \
+    matplotlib \
+    seaborn
+
+# Create necessary directories
+RUN mkdir -p /dbt/logs /dbt/data /dbt/target
+
+# Copy dbt project files
+COPY dbt/ ./dbt/
+
+# Copy seeds
+COPY seeds/ ./seeds/
+
+# Copy Great Expectations config
+COPY great_expectations/ ./great_expectations/
+
+# Copy scripts
+COPY scripts/ ./scripts/
+
+# Set environment variables
+ENV PYTHONPATH=/dbt
+ENV DBT_PROFILES_DIR=/dbt
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD python -c "import dbt" || exit 1
+
+# Default command
+CMD ["tail", "-f", "/dev/null"] 

@@ -1,0 +1,79 @@
+name: 'content_intelligence_platform'
+version: '1.0.0'
+config-version: 2
+
+profile: 'content_intelligence'
+
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+models:
+  content_intelligence_platform:
+    staging:
+      +materialized: view
+      +schema: staging
+    intermediate:
+      +materialized: view
+      +schema: intermediate
+    marts:
+      +materialized: table
+      +schema: marts
+    ml_models:
+      +materialized: table
+      +schema: ml_models
+
+seeds:
+  content_intelligence_platform:
+    +schema: raw
+    content:
+      +column_types:
+        id: uuid
+        publish_dt: timestamp with time zone
+        created_at: timestamp with time zone
+        updated_at: timestamp with time zone
+    engagement_events:
+      +column_types:
+        id: uuid
+        content_id: uuid
+        event_dt: timestamp with time zone
+        created_at: timestamp with time zone
+    costs:
+      +column_types:
+        id: uuid
+        content_id: uuid
+        cost_dt: timestamp with time zone
+        created_at: timestamp with time zone
+    revenue:
+      +column_types:
+        id: uuid
+        content_id: uuid
+        rev_dt: timestamp with time zone
+        created_at: timestamp with time zone
+
+vars:
+  # Finance rules configuration
+  default_amortization_period_months: 12
+  default_time_decay_factor: 0.5
+  default_currency: 'USD'
+  
+  # ML model parameters
+  ml_model_version: 'v1.0'
+  ml_features: ['channel', 'vertical', 'format', 'region', 'recency_days', 'production_cost_ratio', 'engagement_score']
+  
+  # Data quality thresholds
+  roi_min_threshold: -10.0
+  roi_max_threshold: 50.0
+  cpm_min_threshold: 0.01
+  cpc_min_threshold: 0.01
+  cpa_min_threshold: 0.01
+
+target-path: "target"
+log-path: "logs" 

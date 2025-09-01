@@ -1,0 +1,202 @@
+version: 2
+
+sources:
+  - name: raw
+    description: "Raw data from source systems"
+    database: "{{ target.database }}"
+    schema: "{{ target.schema }}"
+    
+    tables:
+      - name: content
+        description: "Content metadata and attributes"
+        columns:
+          - name: id
+            description: "Unique content identifier"
+            tests:
+              - unique
+              - not_null
+          - name: title
+            description: "Content title"
+            tests:
+              - not_null
+          - name: vertical
+            description: "Business vertical/category"
+            tests:
+              - not_null
+              - accepted_values:
+                  values: ["B2B SaaS", "E-commerce", "Healthcare", "Marketing", "Education", "Finance", "Technology", "Sales"]
+          - name: format
+            description: "Content format type"
+            tests:
+              - not_null
+              - accepted_values:
+                  values: ["video", "blog", "ad", "email", "social"]
+          - name: channel
+            description: "Distribution channel"
+            tests:
+              - not_null
+              - accepted_values:
+                  values: ["YouTube", "TikTok", "Blog", "Email", "Paid Social", "LinkedIn", "Twitter", "Instagram"]
+          - name: publish_dt
+            description: "Publication date"
+            tests:
+              - not_null
+          - name: campaign_id
+            description: "Associated campaign identifier"
+          - name: owner_team
+            description: "Team responsible for content"
+            tests:
+              - not_null
+      
+      - name: engagement_events
+        description: "Content engagement metrics by event"
+        columns:
+          - name: id
+            description: "Unique event identifier"
+            tests:
+              - unique
+              - not_null
+          - name: content_id
+            description: "Reference to content table"
+            tests:
+              - not_null
+              - relationships:
+                  to: ref('stg_content')
+                  field: id
+          - name: event_dt
+            description: "Event date and time"
+            tests:
+              - not_null
+          - name: impressions
+            description: "Number of impressions"
+            tests:
+              - not_null
+          - name: views
+            description: "Number of views"
+            tests:
+              - not_null
+          - name: unique_viewers
+            description: "Number of unique viewers"
+            tests:
+              - not_null
+          - name: dwell_seconds_median
+            description: "Median dwell time in seconds"
+          - name: likes
+            description: "Number of likes"
+            tests:
+              - not_null
+          - name: shares
+            description: "Number of shares"
+            tests:
+              - not_null
+          - name: comments
+            description: "Number of comments"
+            tests:
+              - not_null
+          - name: click_throughs
+            description: "Number of click-throughs"
+            tests:
+              - not_null
+          - name: conversions
+            description: "Number of conversions"
+            tests:
+              - not_null
+          - name: conversion_value
+            description: "Value of conversions"
+      
+      - name: costs
+        description: "Content-related costs and expenses"
+        columns:
+          - name: id
+            description: "Unique cost identifier"
+            tests:
+              - unique
+              - not_null
+          - name: content_id
+            description: "Reference to content table"
+            tests:
+              - not_null
+              - relationships:
+                  to: ref('stg_content')
+                  field: id
+          - name: cost_type
+            description: "Type of cost"
+            tests:
+              - not_null
+              - accepted_values:
+                  values: ["production", "licensing", "paid_media", "tooling"]
+          - name: amount
+            description: "Cost amount"
+            tests:
+              - not_null
+              - custom_test_positive_amount
+          - name: currency
+            description: "Currency code"
+            tests:
+              - not_null
+              - accepted_values:
+                  values: ["USD", "EUR", "GBP", "CAD", "AUD"]
+          - name: cost_dt
+            description: "Cost date"
+            tests:
+              - not_null
+          - name: vendor
+            description: "Vendor or service provider"
+          - name: description
+            description: "Cost description"
+      
+      - name: revenue
+        description: "Content-attributed revenue"
+        columns:
+          - name: id
+            description: "Unique revenue identifier"
+            tests:
+              - unique
+              - not_null
+          - name: content_id
+            description: "Reference to content table"
+            tests:
+              - relationships:
+                  to: ref('stg_content')
+                  field: id
+          - name: campaign_id
+            description: "Associated campaign identifier"
+          - name: rev_dt
+            description: "Revenue date"
+            tests:
+              - not_null
+          - name: amount
+            description: "Revenue amount"
+            tests:
+              - not_null
+              - custom_test_positive_amount
+          - name: currency
+            description: "Currency code"
+            tests:
+              - not_null
+              - accepted_values:
+                  values: ["USD", "EUR", "GBP", "CAD", "AUD"]
+          - name: source
+            description: "Revenue source"
+            tests:
+              - not_null
+              - accepted_values:
+                  values: ["direct", "assisted"]
+          - name: attribution_model
+            description: "Revenue attribution model used"
+            tests:
+              - not_null
+              - accepted_values:
+                  values: ["last_touch", "linear", "time_decay"]
+
+# Custom tests
+tests:
+  - name: custom_test_positive_amount
+    description: "Amount should be positive"
+    severity: error
+    config:
+      tags: ["costs", "revenue"]
+    test: |
+      select *
+      from {{ ref('this') }}
+      where amount <= 0 

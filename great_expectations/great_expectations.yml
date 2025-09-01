@@ -1,0 +1,250 @@
+# Great Expectations configuration file
+# This file configures the Great Expectations data quality testing framework
+
+config_version: 3.0
+
+# Datasources configuration
+datasources:
+  postgres_datasource:
+    class_name: Datasource
+    execution_engine:
+      class_name: SqlAlchemyExecutionEngine
+      connection_string: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
+    data_connectors:
+      default_runtime_data_connector_name:
+        class_name: RuntimeDataConnector
+        batch_identifiers:
+          - default_identifier_name
+
+# Data contexts
+data_context_root_directory: great_expectations
+
+# Stores configuration
+stores:
+  expectations_store:
+    class_name: ExpectationsStore
+    store_backend:
+      class_name: TupleFilesystemStoreBackend
+      base_directory: expectations/
+  validations_store:
+    class_name: ValidationsStore
+    store_backend:
+      class_name: TupleFilesystemStoreBackend
+      base_directory: uncommitted/validations/
+  evaluation_parameter_store:
+    class_name: EvaluationParameterStore
+    store_backend:
+      class_name: TupleFilesystemStoreBackend
+      base_directory: evaluation_parameters/
+  checkpoint_store:
+    class_name: CheckpointStore
+    store_backend:
+      class_name: TupleFilesystemStoreBackend
+      base_directory: checkpoints/
+  profiler_store:
+    class_name: ProfilerStore
+    store_backend:
+      class_name: TupleFilesystemStoreBackend
+      base_directory: profilers/
+
+# Validation operators
+validation_operators:
+  action_list_operator:
+    class_name: ActionListValidationOperator
+    action_list:
+      - name: store_validation_result
+        action:
+          class_name: StoreValidationResultAction
+      - name: store_evaluation_params
+        action:
+          class_name: StoreEvaluationParametersAction
+      - name: update_data_docs
+        action:
+          class_name: UpdateDataDocsAction
+
+# Data docs configuration
+data_docs_sites:
+  local_site:
+    class_name: SiteBuilder
+    store_backend:
+      class_name: TupleFilesystemStoreBackend
+      base_directory: uncommitted/data_docs/local_site/
+    site_index_builder:
+      class_name: DefaultSiteIndexBuilder
+      show_cta_footer: true
+
+# Notebooks configuration
+notebooks:
+  python_edit:
+    class_name: SuiteEditNotebookRenderer
+    module_name: great_expectations.render.renderer.suite_edit_notebook_renderer
+  python_view:
+    class_name: SuiteViewNotebookRenderer
+    module_name: great_expectations.render.renderer.suite_view_notebook_renderer
+  python_profile:
+    class_name: ProfilingResultsNotebookRenderer
+    module_name: great_expectations.render.renderer.profiling_results_notebook_renderer
+
+# Profiling configuration
+profiling:
+  postgres:
+    class_name: Profiler
+    module_name: great_expectations.profile.user_configurable_profiler
+    data_connector_name: default_runtime_data_connector_name
+    class_name: UserConfigurableProfiler
+    profile_dataset:
+      class_name: Dataset
+      module_name: great_expectations.dataset
+      class_name: SqlAlchemyDataset
+      batch_kwargs:
+        schema: public
+        table: content
+      expectation_suite_name: content.profiled
+      data_asset_name: content
+      profiler_configuration:
+        table_expectations_only: false
+        excluded_expectations: []
+        ignored_columns: []
+        not_null_only: false
+        primary_or_foreign_key_only: false
+        ordered_columns_only: false
+        use_mostly_for_categorical_profiling: true
+        categorical_columns: []
+        mostly: 0.9
+        sample_size: 1000
+        random_state: 42
+
+# Checkpoints configuration
+checkpoints:
+  content_quality_check:
+    class_name: SimpleCheckpoint
+    validations:
+      - batch_request:
+          datasource_name: postgres_datasource
+          data_connector_name: default_runtime_data_connector_name
+          data_asset_name: content
+        expectation_suite_name: content.quality
+    action_list:
+      - name: store_validation_result
+        action:
+          class_name: StoreValidationResultAction
+      - name: store_evaluation_params
+        action:
+          class_name: StoreEvaluationParametersAction
+      - name: update_data_docs
+        action:
+          class_name: UpdateDataDocsAction
+    evaluation_parameters: {}
+    runtime_configuration: {}
+
+# Expectations configuration
+expectations:
+  content_quality:
+    class_name: ExpectationSuite
+    expectations:
+      - expectation_type: expect_table_columns_to_match_ordered_list
+        kwargs:
+          column_list:
+            - id
+            - title
+            - vertical
+            - format
+            - language
+            - region
+            - publish_dt
+            - channel
+            - campaign_id
+            - owner_team
+            - created_at
+            - updated_at
+        meta:
+          notes:
+            content: "Content table must have all required columns in correct order"
+            format: "markdown"
+      
+      - expectation_type: expect_column_values_to_be_unique
+        kwargs:
+          column: id
+        meta:
+          notes:
+            content: "Content ID must be unique"
+            format: "markdown"
+      
+      - expectation_type: expect_column_values_to_not_be_null
+        kwargs:
+          column: title
+        meta:
+          notes:
+            content: "Content title cannot be null"
+            format: "markdown"
+      
+      - expectation_type: expect_column_values_to_be_in_set
+        kwargs:
+          column: vertical
+          value_set:
+            - "B2B SaaS"
+            - "E-commerce"
+            - "Healthcare"
+            - "Marketing"
+            - "Education"
+            - "Finance"
+            - "Technology"
+            - "Sales"
+        meta:
+          notes:
+            content: "Vertical must be one of the predefined values"
+            format: "markdown"
+      
+      - expectation_type: expect_column_values_to_be_in_set
+        kwargs:
+          column: format
+          value_set:
+            - "video"
+            - "blog"
+            - "ad"
+            - "email"
+            - "social"
+        meta:
+          notes:
+            content: "Format must be one of the predefined values"
+            format: "markdown"
+      
+      - expectation_type: expect_column_values_to_be_in_set
+        kwargs:
+          column: channel
+          value_set:
+            - "YouTube"
+            - "TikTok"
+            - "Blog"
+            - "Email"
+            - "Paid Social"
+            - "LinkedIn"
+            - "Twitter"
+            - "Instagram"
+        meta:
+          notes:
+            content: "Channel must be one of the predefined values"
+            format: "markdown"
+      
+      - expectation_type: expect_column_values_to_be_between
+        kwargs:
+          column: publish_dt
+          min_value: "2020-01-01"
+          max_value: "2025-12-31"
+          parse_strings_as_datetimes: true
+        meta:
+          notes:
+            content: "Publish date must be within reasonable range"
+            format: "markdown"
+
+# Plugins configuration
+plugins_directory: plugins/
+
+# Config variables
+config_variables_file_path: config_variables.yml
+
+# Anonymous usage statistics
+anonymous_usage_statistics:
+  enabled: false
+  data_context_id: ${data_context_id}
+  usage_statistics_url: https://stats.greatexpectations.io/great_expectations/v1/usage_statistics 

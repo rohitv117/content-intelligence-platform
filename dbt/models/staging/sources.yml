@@ -1,0 +1,130 @@
+version: 2
+
+sources:
+  - name: raw
+    description: "Raw data from seed files"
+    tables:
+      - name: content
+        description: "Content metadata and attributes"
+        columns:
+          - name: id
+            description: "Unique identifier for content"
+            tests:
+              - unique
+              - not_null
+          - name: title
+            description: "Content title"
+            tests:
+              - not_null
+          - name: vertical
+            description: "Business vertical"
+            tests:
+              - not_null
+              - accepted_values:
+                  values: ['B2B SaaS', 'E-commerce', 'Healthcare', 'Marketing', 'Education', 'Finance', 'Technology', 'Sales', 'Retail', 'Learning', 'Growth', 'Product', 'Customer Success', 'Analytics', 'Health', 'Banking', 'Enterprise']
+          - name: format
+            description: "Content format"
+            tests:
+              - not_null
+              - accepted_values:
+                  values: ['video', 'blog', 'ad', 'email', 'social']
+          - name: channel
+            description: "Distribution channel"
+            tests:
+              - not_null
+          - name: publish_dt
+            description: "Publication date"
+            tests:
+              - not_null
+              
+      - name: engagement_events
+        description: "User engagement metrics by content and date"
+        columns:
+          - name: id
+            description: "Unique identifier for engagement event"
+            tests:
+              - unique
+              - not_null
+          - name: content_id
+            description: "Reference to content"
+            tests:
+              - not_null
+              - relationships:
+                  to: ref('stg_content')
+                  field: content_id
+          - name: event_dt
+            description: "Event date"
+            tests:
+              - not_null
+          - name: impressions
+            description: "Number of impressions"
+            tests:
+              - not_null
+          - name: views
+            description: "Number of views"
+            tests:
+              - not_null
+          - name: conversions
+            description: "Number of conversions"
+            tests:
+              - not_null
+              
+      - name: costs
+        description: "Cost allocation by content and type"
+        columns:
+          - name: id
+            description: "Unique identifier for cost"
+            tests:
+              - unique
+              - not_null
+          - name: content_id
+            description: "Reference to content"
+            tests:
+              - not_null
+              - relationships:
+                  to: ref('stg_content')
+                  field: content_id
+          - name: cost_type
+            description: "Type of cost"
+            tests:
+              - not_null
+              - accepted_values:
+                  values: ['production', 'licensing', 'paid_media', 'tooling', 'distribution']
+          - name: amount
+            description: "Cost amount"
+            tests:
+              - not_null
+          - name: currency
+            description: "Cost currency"
+            tests:
+              - not_null
+              
+      - name: revenue
+        description: "Revenue attribution by content and date"
+        columns:
+          - name: id
+            description: "Unique identifier for revenue"
+            tests:
+              - unique
+              - not_null
+          - name: content_id
+            description: "Reference to content"
+            tests:
+              - not_null
+              - relationships:
+                  to: ref('stg_content')
+                  field: content_id
+          - name: amount
+            description: "Revenue amount"
+            tests:
+              - not_null
+          - name: currency
+            description: "Revenue currency"
+            tests:
+              - not_null
+          - name: source
+            description: "Revenue source"
+            tests:
+              - not_null
+              - accepted_values:
+                  values: ['direct', 'assisted', 'attributed'] 
